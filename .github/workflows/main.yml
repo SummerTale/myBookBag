@@ -25,7 +25,7 @@ jobs:
         run: npx owasp-dependency-check --scan ./ --format HTML --out dependency-report.html
 
       - name: Upload Dependency Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 
         with:
           name: Dependency-Check-Report
           path: dependency-report.html
