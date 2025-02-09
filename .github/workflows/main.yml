@@ -1,0 +1,31 @@
+name: OWASP Dependency Scan
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run OWASP Dependency-Check
+        run: npx owasp-dependency-check --scan ./ --format HTML --out dependency-report.html
+
+      - name: Upload Dependency Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: Dependency-Check-Report
+          path: dependency-report.html
