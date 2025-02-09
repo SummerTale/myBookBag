@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Book Bag</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>My Book Bag</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+            <a href="dashboard.html">Dashboard</a>
+        </nav>
+        <button id="logout-btn">Logout</button>
+    </header>
+
+    <input type="text" id="search-bar" placeholder="Search for books, authors, titles..." />
+    <button onclick="searchBooks()">Search</button>
+
+    <main>
+        <section id="book-list">
+            <!-- Book list will be dynamically populated here -->
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
