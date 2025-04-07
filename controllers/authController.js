@@ -56,7 +56,7 @@ exports.loginUser = async (req, res) => {
 
         // Generate a JWT token
         const payload = { user: { id: user.id } };
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h', algorithm: 'HS256' });
 
         // Respond with token and userId
         res.json({ token, userId: user._id });
@@ -76,7 +76,7 @@ exports.validateToken = async (req, res) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, {algorithms: ['HS256']});
         const user = await User.findById(decoded.user.id);
 
         if (!user) {
