@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const CryptoJS = require('crypto-js');
 
 // Register User
 exports.registerUser = async (req, res) => {
@@ -18,7 +19,8 @@ exports.registerUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create a new user
-        user = new User({ username, email, password: hashedPassword });
+        const encryptedEmail = CryptoJS.AES.encrypt(email, process.env.CRYPTO_SECRET).toString();
+        user = new User({username, email: encryptedEmail, password: hashedPassword});
         await user.save();
 
         res.status(201).json({ userId: user._id, msg: 'User registered successfully' });
@@ -34,8 +36,19 @@ exports.loginUser = async (req, res) => {
 
     try {
         // Check if the user exists
-        const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
+        const users = await User.find();
+        let user = null;
+        for (let u of users){
+            const bytes = CryptoJS.AES.decrypt(u.email, process.env.CRYPTO_SECRET);
+            const decryptedEmail = bytes.toString(CryptoJS.enc.Utf8);
+            if (decryptedEmail === email) {
+                user = u;
+                break;
+            }
+        }
+        if (!user) {
+            return res.status(400).json({ msg: 'Invalid credentials' });
+        }
 
         // Check if the password matches
         const isMatch = await bcrypt.compare(password, user.password);
