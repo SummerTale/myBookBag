@@ -3,11 +3,23 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const CryptoJS = require('crypto-js');
 
+function isStrongPassword(password) {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    return regex.test(password);
+}
+
 // Register User
 exports.registerUser = async (req, res) => {
     const { username, email, password } = req.body;
 
     try {
+
+        if (!isStrongPassword(password)) {
+            return res.status(400).json({
+                msg: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.'
+            });
+        }
+        
         // Check if the user already exists
         let user = await User.findOne({ email });
         if (user) {
