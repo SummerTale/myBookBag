@@ -1,4 +1,13 @@
-const Review = require('../models/Review'); // Import the Review model
+const Review = require('../models/Review');
+const CryptoJS = require('crypto-js');
+const crypto = require('crypto');
+
+function generateHMAC(data){
+    return crypto
+    .createHmac('sha256', process.env.SECRET_KEY)
+    .update(data)
+    .digest('hex');
+}
 
 exports.addReview = async (req, res) => {
     const { bookId } = req.params; // Extract bookId from the URL
@@ -10,11 +19,15 @@ exports.addReview = async (req, res) => {
 
     try {
         // Create a new review document
+        const encryptedComment = CryptoJS.AES.encrypt(comment, process.env.CRYPTO_SECRET).toString();
+        const dataToSign = `${userId}:${bookId}:${encryptedComment}:${rating}`;
+        const signature = generateHMAC(dataToSign);
         const newReview = new Review({
             bookId,
             userId,
-            comment,
+            comment : encryptedComment,
             rating,
+            signature
         });
 
         // Save the review to the database
@@ -34,10 +47,21 @@ exports.getReviewsByBook = async (req, res) => {
         const reviews = await Review.find({ bookId }).populate('userId', 'username');
 
         // Ensure reviews with missing userId are handled
-        const sanitizedReviews = reviews.map((review) => ({
+        const sanitizedReviews = reviews.map((review) => {
+            const decryptedBytes = CryptoJS.AES.decrypt(review.comment, process.env.CRYPTO_SECRET);
+            const decryptedComment = decryptedBytes.toString(CryptoJS.enc.Utf8);
+            
+            const dataToVerify = `${review.userId}:${review.bookId}:${review.comment}:${review.rating}`;
+            const expectedSignature = generateHMAC(dataToVerify);
+            const isValid = review.signature === expectedSignature;
+            
+            return{
             ...review.toObject(),
+            comment: isValid ? decryptedComment : "[Tampered]",
             userId: review.userId || { username: "Anonymous" },
-        }));
+            verified: isValid
+            };
+        });
 
         res.status(200).json(sanitizedReviews);
     } catch (error) {
