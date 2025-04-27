@@ -1,0 +1,52 @@
+name: OWASP ZAP Localhost Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand(\"ping\").ok'" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start Application
+        run: |
+          npm start &
+          sleep 20 # wait for app to boot (adjust if your app needs more)
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.11.0
+        with:
+          target: 'http://localhost:3000'
+          fail_action: false
+          format: 'HTML'
+          output_path: 'zap-report.html'
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-scan-report
+          path: zap-report.html
